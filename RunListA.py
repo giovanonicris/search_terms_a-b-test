@@ -37,18 +37,11 @@ config.request_timeout = 20
 header = {'User-Agent': user_agent}
 
 # load existing dataset to avoid duplicate fetching
-script_dir = os.path.dirname(os.path.abspath(__file__))
-output_dir = os.path.join(script_dir, 'online_sentiment/output')
-main_csv_path = os.path.join(output_dir, 'enterprise_risks_online_sentiment.csv')
-
-if os.path.exists(main_csv_path):
-    existing_df = pd.read_csv(main_csv_path, usecols=lambda x: 'LINK' in x, encoding="utf-8")
-    existing_links = set(existing_df["LINK"].dropna().str.lower().str.strip())  # normalize existing links for efficient processing
-else:
-    existing_links = set()
+output_dir = os.path.dirname(os.path.abspath(__file__))
+main_csv_path = os.path.join(output_dir, 'enterprise_risk_sampleset_a.csv')
 
 # encode-decode search terms
-read_file = pd.read_csv('EnterpriseRisksListEncoded.csv', encoding='utf-8')
+read_file = pd.read_csv('enterprise_risk_list_a.csv', encoding='utf-8')
 read_file['ENTERPRISE_RISK_ID'] = pd.to_numeric(read_file['ENTERPRISE_RISK_ID'], downcast='integer', errors='coerce')
 
 def process_encoded_search_terms(term):
@@ -121,9 +114,6 @@ for term in read_file.SEARCH_TERMS.dropna():
                 if "/en/" in decoded_url:
                     print(f"Skipping {decoded_url} (Detected translated article)")
                     continue  # skip if true
-
-                if decoded_url in existing_links:
-                    continue  # skip if article was previously collected
                 
                 title.append(title_text)
                 search_terms.append(term)
@@ -170,9 +160,6 @@ for article_link in link:
         sentiments.append('positive')
         polarity.append(f'{comp}')
 
-print('Length alert name: ', len(search_terms), ' Length Title: ', len(title), ' Length Link: ', len(link),
-      ' Length KW: ', len(keywords))
-
 alerts = pd.DataFrame({
     'SEARCH_TERMS': search_terms,
     'TITLE': title,
@@ -216,10 +203,3 @@ old_df = combined_df[combined_df['PUBLISHED_DATE'] < six_months_ago].copy()
 recent_df.sort_values(by='PUBLISHED_DATE', ascending=False).to_csv(main_csv_path, index=False, encoding='utf-8')
 
 print(f"Updated main CSV with {len(recent_df)} records.")
-
-# archive old data
-archive_csv_path = os.path.join(output_dir, 'enterprise_risks_sentiment_archive.csv')
-archive_data = old_df[['ENTERPRISE_RISK_ID', 'TITLE', 'PUBLISHED_DATE', 'LINK', 'SENTIMENT', 'POLARITY', 'LAST_RUN_TIMESTAMP']]
-archive_data.to_csv(archive_csv_path, mode='a', index=False, header=not os.path.exists(archive_csv_path), encoding='utf-8')
-
-print(f"Archived {len(old_df)} records.")
