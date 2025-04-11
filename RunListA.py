@@ -181,9 +181,8 @@ print('Created sentiments')
 # final_df['LAST_RUN_TIMESTAMP'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # re-encode SEARCH_TERMS
-alerts['ENCODED_SEARCH_TERMS'] = alerts['SEARCH_TERMS'].apply(
-    lambda x: int.from_bytes(x.encode('utf-8'), byteorder='little') if pd.notnull(x) else None
-)
+alerts['ENCODED_TERMS'] = alerts['SEARCH_TERMS'].apply(lambda x: int.from_bytes(x.encode('utf-8'), byteorder='little') if pd.notnull(x) else None)
+
 # merge new alerts with search terms data
 joined_df = pd.merge(alerts, read_file, on='SEARCH_TERMS', how='left')
 final_df = joined_df[['ENTERPRISE_RISK_ID', 'ENCODED_TERMS', 'TITLE', 'SUMMARY', 'KEYWORDS', 'PUBLISHED_DATE', 'LINK', 'SOURCE', 'SOURCE_URL', 'SENTIMENT', 'POLARITY']]
